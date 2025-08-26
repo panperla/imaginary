@@ -1,45 +1,66 @@
+version = '2'
+
 [run]
-    concurrency = 4
-    tests = false
-
-[linters-settings]
-    [linters-settings.gocyclo]
-        min-complexity = 20
-
-    [linters-settings.goconst]
-        min-len = 2
-        min-occurrences = 2
-
-    [linters-settings.misspell]
-        locale = "US"
+concurrency = 4
+tests = false
 
 [linters]
-    # White-listing, to be more CI safe.
-    disable-all = true
+default = 'none'
+enable = [
+  'depguard',
+  'gocritic',
+  'gocyclo',
+  'gosec',
+  'govet',
+  'ineffassign',
+  'misspell',
+  'staticcheck',
+  'unconvert',
+  'unparam',
+  'unused'
+]
 
-    # @see https://github.com/golangci/golangci-lint#enabled-by-default-linters
-    enable = [
-        "staticcheck",
-        "gosimple",
-        "ineffassign",
-        "typecheck",
-        "govet",
-#        "errcheck",
-        "unused",
-        "structcheck",
-        "varcheck",
-        "deadcode",
-
-        "stylecheck",
-        "gosec",
-        "interfacer",
-        "unconvert",
-#        "goconst",
-        "gocyclo",
-#        "maligned",
-        "depguard",
-        "misspell",
-        "unparam",
-        "scopelint", # Would like to ignore *_test.go files, but can't atm.
-        "gocritic",
+[linters.settings]
+[linters.settings.depguard]
+  [linters.settings.depguard.rules.main]
+    allow = [
+      "$gostd",
+      "github.com/h2non/bimg",
+      "github.com/rs/cors",
+      "github.com/throttled/throttled/v2",
+      "github.com/throttled/throttled/v2/store/memstore",
+      "github.com/h2non/filetype",
     ]
+
+[linters.settings.goconst]
+min-len = 2
+min-occurrences = 2
+
+[linters.settings.gocyclo]
+min-complexity = 20
+
+[linters.settings.misspell]
+locale = 'US'
+
+[linters.exclusions]
+generated = 'lax'
+presets = [
+  'comments',
+  'common-false-positives',
+  'legacy',
+  'std-error-handling'
+]
+paths = [
+  'third_party$',
+  'builtin$',
+  'examples$'
+]
+
+[formatters]
+[formatters.exclusions]
+generated = 'lax'
+paths = [
+  'third_party$',
+  'builtin$',
+  'examples$'
+]

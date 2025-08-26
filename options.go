@@ -44,6 +44,7 @@ type ImageOptions struct {
 	Color         []uint8
 	Background    []uint8
 	Interlace     bool
+	Palette       bool
 	Speed         int
 	Extend        bimg.Extend
 	Gravity       bimg.Gravity
