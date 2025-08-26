@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/url"
 	"os"
@@ -192,7 +191,7 @@ func main() {
 
 	// Read placeholder image, if required
 	if *aPlaceholder != "" {
-		buf, err := ioutil.ReadFile(*aPlaceholder)
+		buf, err := os.ReadFile(*aPlaceholder)
 		if err != nil {
 			exitWithError("cannot start the server: %s", err)
 		}

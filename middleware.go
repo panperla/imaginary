@@ -72,12 +72,13 @@ func throttle(next http.Handler, o ServerOptions) http.Handler {
 	}
 
 	quota := throttled.RateQuota{MaxRate: throttled.PerSec(o.Concurrency), MaxBurst: o.Burst}
-	rateLimiter, err := throttled.NewGCRARateLimiter(store, quota)
+	wrappedStore := throttled.WrapStoreWithContext(store)
+	rateLimiter, err := throttled.NewGCRARateLimiterCtx(wrappedStore, quota)
 	if err != nil {
 		return throttleError(err)
 	}
 
-	httpRateLimiter := throttled.HTTPRateLimiter{
+	httpRateLimiter := throttled.HTTPRateLimiterCtx{
 		RateLimiter: rateLimiter,
 		VaryBy:      &throttled.VaryBy{Method: true},
 	}
@@ -147,7 +148,7 @@ func setCacheHeaders(next http.Handler, ttl int) http.Handler {
 		ttlDiff := time.Duration(ttl) * time.Second
 		expires := time.Now().Add(ttlDiff)
 
-		w.Header().Add("Expires", strings.Replace(expires.Format(time.RFC1123), "UTC", "GMT", -1))
+		w.Header().Add("Expires", strings.ReplaceAll(expires.Format(time.RFC1123), "UTC", "GMT"))
 		w.Header().Add("Cache-Control", getCacheControl(ttl))
 	})
 }

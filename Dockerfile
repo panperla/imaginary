@@ -1,9 +1,8 @@
-ARG GOLANG_VERSION=1.17
-FROM golang:${GOLANG_VERSION}-bullseye as builder
+ARG GOLANG_VERSION=1.25.0
+FROM golang:${GOLANG_VERSION}-trixie AS builder
 
-ARG IMAGINARY_VERSION=dev
-ARG LIBVIPS_VERSION=8.12.2
-ARG GOLANGCILINT_VERSION=1.29.0
+ARG IMAGINARY_VERSION=production
+ARG GOLANGCILINT_VERSION=2.4.0
 
 # Installs libvips + required libraries
 RUN DEBIAN_FRONTEND=noninteractive \
@@ -14,38 +13,20 @@ RUN DEBIAN_FRONTEND=noninteractive \
   gobject-introspection gtk-doc-tools libglib2.0-dev libjpeg62-turbo-dev libpng-dev \
   libwebp-dev libtiff5-dev libgif-dev libexif-dev libxml2-dev libpoppler-glib-dev \
   swig libmagickwand-dev libpango1.0-dev libmatio-dev libopenslide-dev libcfitsio-dev \
-  libgsf-1-dev fftw3-dev liborc-0.4-dev librsvg2-dev libimagequant-dev libheif-dev && \
-  cd /tmp && \
-  curl -fsSLO https://github.com/libvips/libvips/releases/download/v${LIBVIPS_VERSION}/vips-${LIBVIPS_VERSION}.tar.gz && \
-  tar zvxf vips-${LIBVIPS_VERSION}.tar.gz && \
-  cd /tmp/vips-${LIBVIPS_VERSION} && \
-	CFLAGS="-g -O3" CXXFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0 -g -O3" \
-    ./configure \
-    --disable-debug \
-    --disable-dependency-tracking \
-    --disable-introspection \
-    --disable-static \
-    --enable-gtk-doc-html=no \
-    --enable-gtk-doc=no \
-    --enable-pyvips8=no && \
-  make && \
-  make install && \
-  ldconfig
+  libgsf-1-dev libfftw3-dev liborc-0.4-dev librsvg2-dev libimagequant-dev libheif-dev \
+  libvips-dev libvips-tools libvips42t64
 
 # Installing golangci-lint
 WORKDIR /tmp
 RUN curl -fsSL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b "${GOPATH}/bin" v${GOLANGCILINT_VERSION}
 
-WORKDIR ${GOPATH}/src/github.com/h2non/imaginary
-
-# Cache go modules
-ENV GO111MODULE=on
+WORKDIR ${GOPATH}/src/github.com/panperla/imaginary
 
 COPY go.mod .
 COPY go.sum .
 
 RUN go mod download
-
+RUN go mod verify
 # Copy imaginary sources
 COPY . .
 
@@ -57,9 +38,9 @@ RUN golangci-lint run .
 RUN go build -a \
     -o ${GOPATH}/bin/imaginary \
     -ldflags="-s -w -h -X main.Version=${IMAGINARY_VERSION}" \
-    github.com/h2non/imaginary
+    github.com/panperla/imaginary
 
-FROM debian:bullseye-slim
+FROM debian:trixie-slim
 
 ARG IMAGINARY_VERSION
 
@@ -78,10 +59,10 @@ COPY --from=builder /etc/ssl/certs /etc/ssl/certs
 RUN DEBIAN_FRONTEND=noninteractive \
   apt-get update && \
   apt-get install --no-install-recommends -y \
-  procps libglib2.0-0 libjpeg62-turbo libpng16-16 libopenexr25 \
-  libwebp6 libwebpmux3 libwebpdemux2 libtiff5 libgif7 libexif12 libxml2 libpoppler-glib8 \
-  libmagickwand-6.q16-6 libpango1.0-0 libmatio11 libopenslide0 libjemalloc2 \
-  libgsf-1-114 fftw3 liborc-0.4-0 librsvg2-2 libcfitsio9 libimagequant0 libheif1 && \
+  procps libglib2.0-0 libjpeg62-turbo libpng16-16 libopenexr-3-1-30  \
+  libwebp7 libwebpmux3 libwebpdemux2 libtiff6 libgif7 libexif12 libxml2 libpoppler-glib8 \
+  libmagickwand-7.q16-10 libpango-1.0-0 libmatio13 libopenslide0 libjemalloc2 \
+  libgsf-1-114 libfftw3-bin libfftw3-dev liborc-0.4-0 librsvg2-2 libcfitsio10t64 libimagequant0 libheif1 libvips42t64 && \
   ln -s /usr/lib/$(uname -m)-linux-gnu/libjemalloc.so.2 /usr/local/lib/libjemalloc.so && \
   apt-get autoremove -y && \
   apt-get autoclean && \
@@ -90,7 +71,7 @@ RUN DEBIAN_FRONTEND=noninteractive \
 ENV LD_PRELOAD=/usr/local/lib/libjemalloc.so
 
 # Server port to listen
-ENV PORT 9000
+ENV PORT=9000
 
 # Drop privileges for non-UID mapped environments
 USER nobody

@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -44,7 +44,7 @@ func (s *HTTPImageSource) fetchImage(url *url.URL, ireq *http.Request) ([]byte, 
 			return nil, fmt.Errorf("error fetching remote http image headers: %v", err)
 		}
 		_ = res.Body.Close()
-		if res.StatusCode < 200 && res.StatusCode > 206 {
+		if res.StatusCode < 200 || res.StatusCode > 206 {
 			return nil, NewError(fmt.Sprintf("error fetching remote http image headers: (status=%d) (url=%s)", res.StatusCode, req.URL.String()), res.StatusCode)
 		}
 
@@ -66,7 +66,7 @@ func (s *HTTPImageSource) fetchImage(url *url.URL, ireq *http.Request) ([]byte, 
 	}
 
 	// Read the body
-	buf, err := ioutil.ReadAll(res.Body)
+	buf, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create image from response body: %s (url=%s)", req.URL.String(), err)
 	}
