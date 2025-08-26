@@ -1,4 +1,4 @@
-module github.com/panperla/imaginary
+module github.com/h2non/imaginary
 
 go 1.25.0
 
