@@ -70,6 +70,7 @@ func throttle(next http.Handler, o ServerOptions) http.Handler {
 	if err != nil {
 		return throttleError(err)
 	}
+	wrappedStore := throttled.WrapStoreWithContext(store)
 
 	quota := throttled.RateQuota{MaxRate: throttled.PerSec(o.Concurrency), MaxBurst: o.Burst}
 	wrappedStore := throttled.WrapStoreWithContext(store)
